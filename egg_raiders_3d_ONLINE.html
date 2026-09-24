@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>EGG RAIDERS 3D — Ultra Edition</title>
+<style>
+:root{--bg:#07101d;--panel:rgba(8,16,31,.82);--line:rgba(255,255,255,.12);--accent:#7c5cff;--cyan:#28d8ff;--gold:#ffd45a}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050a12;color:#fff;font-family:Inter,system-ui,Arial,sans-serif}
+canvas{display:block}button,input{font:inherit}button{border:0;color:#fff;cursor:pointer;font-weight:800}
+#game{position:fixed;inset:0}
+#loading{position:fixed;inset:0;z-index:999;display:grid;place-items:center;background:radial-gradient(circle at 50% 35%,#182b52,#050a12 65%);transition:opacity .5s}
+.loader{text-align:center}.logo{font-size:clamp(34px,7vw,72px);font-weight:1000;letter-spacing:-3px;text-shadow:0 8px 35px #000}.logo span{color:#7c5cff}.loadline{width:min(360px,80vw);height:8px;background:#1a2740;border-radius:20px;overflow:hidden;margin:20px auto}.loadline i{display:block;height:100%;width:40%;background:linear-gradient(90deg,#7c5cff,#28d8ff);animation:load 1.1s infinite alternate}@keyframes load{to{width:100%;transform:translateX(0)}}
+#menu{position:fixed;inset:0;z-index:500;display:none;place-items:center;background:linear-gradient(180deg,rgba(2,6,15,.35),rgba(2,6,15,.78));backdrop-filter:blur(4px)}
+.menuBox{width:min(720px,94vw);padding:34px;text-align:center}.menuBox h1{font-size:clamp(42px,8vw,78px);line-height:.9;margin:0 0 12px;letter-spacing:-4px}.menuBox h1 b{color:#7c5cff}.tag{color:#9db0cd;margin-bottom:26px}.menuBtns{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:500px;margin:auto}.bigBtn{padding:16px 18px;border-radius:16px;background:linear-gradient(135deg,#7359ff,#397dff);box-shadow:0 10px 30px rgba(74,88,255,.25);font-size:16px}.bigBtn.alt{background:#14223a}.nameInput{width:min(320px,90%);padding:13px 15px;border-radius:12px;border:1px solid var(--line);background:#0b1527;color:#fff;outline:none;margin-bottom:12px;text-align:center}
+#hud{position:fixed;inset:0;z-index:20;pointer-events:none;display:none}
+.top{position:absolute;left:14px;right:14px;top:12px;display:flex;gap:10px;align-items:center}.stat{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:9px 13px;backdrop-filter:blur(12px);box-shadow:0 8px 30px #0003}.stat small{display:block;color:#8195b5;font-size:10px;font-weight:900;letter-spacing:.8px}.stat strong{font-size:17px}.levelStat{flex:1;min-width:150px}.xp{height:7px;border-radius:20px;background:#1c2940;margin-top:5px;overflow:hidden}.xp i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7c5cff,#28d8ff);box-shadow:0 0 12px #28d8ff}
+#right{position:absolute;right:14px;top:82px;display:flex;flex-direction:column;gap:8px;pointer-events:auto}.hbtn{padding:11px 13px;border-radius:13px;background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(12px);min-width:120px;text-align:left}.hbtn:hover{background:#182741}.admin{background:linear-gradient(135deg,#8b243e,#bd4d69)!important}
+#bottom{position:absolute;left:50%;bottom:15px;transform:translateX(-50%);display:flex;gap:8px;pointer-events:auto}.pill{background:var(--panel);border:1px solid var(--line);padding:9px 14px;border-radius:99px;color:#b9c8df;font-size:12px}
+#toast{position:fixed;z-index:900;left:50%;top:88px;transform:translate(-50%,-15px);opacity:0;pointer-events:none;background:#0d192c;border:1px solid #345071;padding:12px 18px;border-radius:14px;font-weight:900;box-shadow:0 14px 35px #0006;transition:.25s}#toast.show{opacity:1;transform:translate(-50%,0)}
+.modal{position:fixed;inset:0;z-index:700;display:none;place-items:center;background:#0008;padding:16px}.modal.show{display:grid}.window{width:min(960px,96vw);max-height:88vh;overflow:auto;padding:24px;border-radius:22px;background:rgba(7,14,28,.95);border:1px solid var(--line);box-shadow:0 25px 80px #0009}.window h2{margin:0 0 18px;font-size:27px}.close{float:right;background:#18263d;border-radius:10px;padding:8px 11px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}.card{background:#0d192c;border:1px solid #233653;border-radius:16px;padding:15px}.card h3{margin:0 0 7px}.muted{color:#8499b8;font-size:12px}.card button{margin-top:10px;width:100%;padding:10px;border-radius:10px;background:linear-gradient(135deg,#6d55ff,#367cff)}.card button:disabled{opacity:.4;cursor:not-allowed}.rarity{font-weight:900}.common{color:#b9c5d6}.rare{color:#43baff}.epic{color:#bf6cff}.legendary{color:#ffd34f}.mythic{color:#ff5ca8}.divine{color:#55ffe0}.secret{color:#fff;text-shadow:0 0 12px #ff5df0}
+#mobile{display:none;position:fixed;inset:0;z-index:25;pointer-events:none}.stick{position:absolute;left:20px;bottom:25px;width:138px;height:138px;border-radius:50%;background:#ffffff12;border:1px solid #ffffff18;pointer-events:auto}.knob{position:absolute;left:39px;top:39px;width:60px;height:60px;border-radius:50%;background:#765dffcc}.touches{position:absolute;right:18px;bottom:25px;display:flex;gap:10px;pointer-events:auto}.touch{width:62px;height:62px;border-radius:50%;background:#13243cdd;border:1px solid #ffffff18}
+#hatch{position:fixed;inset:0;z-index:800;display:none;place-items:center;background:radial-gradient(circle,#192d55aa,#030712ee)}#hatch.show{display:grid}.hatchBox{text-align:center}.bigEgg{font-size:130px;filter:drop-shadow(0 0 30px #7c5cff);animation:eggshake .18s infinite alternate}.bigEgg.crack{animation:crack .45s forwards}@keyframes eggshake{to{transform:rotate(7deg) scale(1.06)}}@keyframes crack{to{transform:scale(1.4) rotate(20deg);opacity:0}}.reveal{font-size:95px;animation:pop .5s cubic-bezier(.2,1.6,.3,1)}@keyframes pop{from{transform:scale(.1);opacity:0}to{transform:scale(1);opacity:1}}
+@media(max-width:720px){.menuBtns{grid-template-columns:1fr}.stat{padding:7px 9px}.stat strong{font-size:14px}.stat small{font-size:8px}.top{left:7px;right:7px}.levelStat{min-width:105px}#right{right:7px;top:72px}.hbtn{min-width:96px;padding:9px;font-size:12px}.pill{font-size:10px}#mobile{display:block}.window{padding:16px}}
+
+#announcement{position:fixed;top:78px;left:50%;transform:translate(-50%,-20px);z-index:120;display:none;max-width:min(760px,92vw);padding:14px 22px;border:1px solid rgba(255,212,90,.55);border-radius:16px;background:linear-gradient(135deg,rgba(35,25,5,.96),rgba(12,18,32,.96));box-shadow:0 14px 45px rgba(0,0,0,.45);text-align:center;pointer-events:none}#announcement.show{display:block;animation:announceIn .35s ease}@keyframes announceIn{from{opacity:0;transform:translate(-50%,-35px)}to{opacity:1;transform:translate(-50%,0)}}
+</style>
+</head>
+<body>
+<div id="loading"><div class="loader"><div class="logo">EGG <span>RAIDERS</span> 3D</div><p>Ultra Edition wird geladen...</p><div class="loadline"><i></i></div></div></div>
+<div id="game"></div>
+
+<div id="menu">
+ <div class="menuBox">
+  <h1>EGG <b>RAIDERS</b><br>3D</h1>
+  <div class="tag">Collect · Hatch · Mutate · Explore</div>
+  <input class="nameInput" id="menuName" maxlength="18" placeholder="Spielername">
+  <div class="menuBtns">
+   <button class="bigBtn" onclick="startGame()">▶ SPIELEN</button>
+   <button class="bigBtn alt" onclick="openHelp()">❓ ANLEITUNG</button>
+  </div>
+  <p class="muted">Kein Stehlen · Kein Bauen · Dein Fortschritt gehört dir.</p>
+ </div>
+</div>
+
+<div id="hud">
+ <div class="top">
+  <div class="stat"><small>COINS</small><strong id="coins">0</strong></div>
+  <div class="stat"><small>LEVEL</small><strong id="level">1</strong></div><div class="stat"><small>ONLINE</small><strong id="onlineCount">1</strong></div>
+  <div class="stat levelStat"><small>XP <span id="xpText">0/100</span></small><div class="xp"><i id="xpBar"></i></div></div>
+ </div>
+ <div id="right">
+  <button class="hbtn" onclick="openEggs()">🥚 Eggs</button>
+  <button class="hbtn" onclick="openCollection()">🧠 Sammlung</button>
+  <button class="hbtn" onclick="openShop()">⚡ Shop</button>
+  <button class="hbtn" onclick="openQuests()">🎯 Quests</button>
+  <button class="hbtn" onclick="openDaily()">🎁 Daily</button>
+  <button class="hbtn" onclick="openAchievements()">🏆 Achievements</button>
+  <button class="hbtn" onclick="openMap()">🗺️ Welt</button>
+  <button class="hbtn" onclick="openSettings()">⚙️</button>
+  <button class="hbtn admin" id="adminBtn" onclick="openAdmin()" style="display:none">👑 Admin</button>
+ </div>
+ <div id="bottom"><div class="pill">WASD · Maus · Shift</div><div class="pill">E = nächstes Egg</div></div>
+</div>
+
+<div id="mobile"><div class="stick" id="stick"><div class="knob" id="knob"></div></div><div class="touches"><button class="touch" id="interact">E</button><button class="touch" id="run">⚡</button></div></div>
+<div id="toast"></div><div id="announcement"></div><div id="networkStatus" style="position:fixed;left:14px;bottom:72px;z-index:90;padding:7px 11px;border-radius:10px;background:rgba(7,13,25,.8);border:1px solid rgba(255,255,255,.12);font-size:12px;color:#9fb0c8">🟡 Verbinde…</div>
+<div id="modal" class="modal"><div class="window" id="window"></div></div>
+<div id="hatch"><div class="hatchBox" id="hatchBox"></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+"use strict";
+
+/* ============================================================
+   EGG RAIDERS 3D — ULTRA SINGLE FILE
+   Everything lives in this HTML file. No building/stealing system.
+   ============================================================ */
+
+const $=id=>document.getElementById(id);
+const SAVE="eggRaidersUltraSaveV3";
+const defaultState={
+ name:"Player",coins:2500,level:1,xp:0,speedLevel:1,
+ collection:[],mutations:[],unlocked:["Starter Island"],quests:{},
+ achievements:{},dailyStreak:0,lastDaily:"",settings:{music:true,shadows:true,inputMode:"keyboard"},pendingGifts:{},announcements:[],
+ totalHatches:0,totalCoins:0,discoveredZones:1
+};
+let state={...defaultState};
+try{const s=JSON.parse(localStorage.getItem(SAVE)||"null");if(s)state=Object.assign(state,s)}catch(e){}
+
+const mutations=[
+ {name:"Normal",mult:1,color:0xffffff,chance:.70},
+ {name:"Golden",mult:2.5,color:0xffd34d,chance:.10},
+ {name:"Diamond",mult:7,color:0x67eaff,chance:.06},
+ {name:"Rainbow",mult:18,color:0xff5de7,chance:.04},
+ {name:"Neon",mult:10,color:0x53ff91,chance:.035},
+ {name:"Shadow",mult:14,color:0x30303c,chance:.025},
+ {name:"Galaxy",mult:25,color:0x9b75ff,chance:.018},
+ {name:"Cosmic",mult:40,color:0x43eaff,chance:.01},
+ {name:"Secret Mutation",mult:75,color:0xff4b7d,chance:.002}
+];
+const eggs=[
+ {name:"Basic Egg",zone:"Starter Island",req:1,cost:100,color:0x6ea6ff,pets:[["Bubblo","Common",10],["Mimi","Rare",25],["Pixel Pup","Epic",60],["Star Nibbler","Legendary",180]]},
+ {name:"Forest Egg",zone:"Green Forest",req:11,cost:650,color:0x46d87a,pets:[["Mossy","Common",15],["Leafy","Rare",40],["Woodoo","Epic",90],["Forest King","Legendary",260]]},
+ {name:"Desert Egg",zone:"Desert",req:11,cost:1800,color:0xf2bd52,pets:[["Duney","Common",25],["Scorpy","Rare",65],["Sun Fox","Epic",150],["Golden Sphinx","Legendary",450]]},
+ {name:"Ocean Egg",zone:"Ocean",req:26,cost:6000,color:0x31d7ef,pets:[["Bloop","Common",50],["Coraly","Rare",120],["Aqua Rex","Epic",300],["Tide Lord","Legendary",800]]},
+ {name:"Crystal Egg",zone:"Crystal Cave",req:26,cost:18000,color:0xd16fff,pets:[["Pebblix","Common",90],["Gemlet","Rare",220],["Prismoo","Epic",600],["Crystal Titan","Legendary",1500]]},
+ {name:"Volcano Egg",zone:"Volcano",req:51,cost:55000,color:0xff603f,pets:[["Ember","Common",150],["Magmax","Rare",400],["Lava Lynx","Epic",1000],["Inferno Dragon","Legendary",3000]]},
+ {name:"Galaxy Egg",zone:"Space Zone",req:51,cost:160000,color:0x9872ff,pets:[["Cosmi","Common",300],["Nebulon","Rare",900],["Astro Cat","Epic",2500],["Galaxy Beast","Legendary",7000]]},
+ {name:"Ancient Egg",zone:"Ancient Zone",req:100,cost:500000,color:0xffd268,pets:[["Runi","Rare",900],["Sphinx Pup","Epic",3000],["Ancient Rex","Legendary",10000],["Time King","Mythic",30000]]},
+ {name:"Secret Egg",zone:"Secret Zone",req:150,cost:2500000,color:0xff4fd8,pets:[["???","Mythic",8000],["Voidling","Divine",30000],["Secret Beast","Secret",100000],["Cosmic One","Secret",250000]]}
+];
+const zones=[
+ ["Starter Island",0,0,0x4b9b63,1,"🌱"],["Green Forest",-56,0,0x2e8148,11,"🌲"],
+ ["Desert",56,0,0xc99a49,11,"🏜️"],["Ocean",0,-58,0x237ea5,26,"🌊"],
+ ["Crystal Cave",0,58,0x67418d,26,"💎"],["Volcano",-82,-55,0xa84438,51,"🌋"],
+ ["Space Zone",82,55,0x30376f,51,"🚀"],["Ancient Zone",96,-62,0x826241,100,"🏛️"],
+ ["Secret Zone",-102,65,0x22263d,150,"❓"]
+];
+
+let scene,camera,renderer,clock,player;
+let yaw=0,pitch=-.28,keys={},joy={x:0,y:0},world=[],pets3D=[],eggObjects=[];
+let started=false,day=0;
+const v=new THREE.Vector3();
+
+// Online multiplayer / global announcements
+const WS_URL = (location.protocol === "http:" || location.protocol === "https:") ? ((location.protocol === "https:" ? "wss://" : "ws://") + location.host) : "";
+let socket=null, onlinePlayers=new Map(), lastNetSend=0, mySessionId=null;
+function networkStatus(text,ok){ const el=$("networkStatus"); if(!el)return; el.textContent=(ok?"🟢 ":"🟡 ")+text; el.style.color=ok?"#7dffb2":"#ffd56a"; }
+function connectOnline(){
+ if(!WS_URL){networkStatus("Offline",false);return;}
+ try{
+  socket=new WebSocket(WS_URL);
+  socket.onopen=()=>{networkStatus("Online",true); socket.send(JSON.stringify({type:"join",name:state.name}));};
+  socket.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch{return;} handleNetworkMessage(m)};
+  socket.onclose=()=>{networkStatus("Offline – Server nicht verbunden",false); setTimeout(()=>{if(started)connectOnline()},3000)};
+  socket.onerror=()=>networkStatus("Verbindungsfehler",false);
+ }catch(e){networkStatus("Offline",false)}
+}
+function sendNet(m){if(socket&&socket.readyState===1)socket.send(JSON.stringify(m));}
+function makeRemotePlayer(id,data){
+ const g=new THREE.Group();
+ const body=new THREE.Mesh(new THREE.CapsuleGeometry(.55,1.05,6,12),material(0xff6a8a,.65,.05)); body.position.y=1.05; g.add(body);
+ const head=new THREE.Mesh(new THREE.SphereGeometry(.62,18,14),material(0xffd0ad)); head.position.y=2.15; g.add(head);
+ const lab=label(String(data.name||"Player"),.65); lab.position.y=3.15; g.add(lab);
+ g.position.set(Number(data.x)||0,0,Number(data.z)||0); scene.add(g); onlinePlayers.set(id,g); return g;
+}
+function removeRemotePlayer(id){const g=onlinePlayers.get(id);if(g){scene.remove(g);onlinePlayers.delete(id)}}
+function handleNetworkMessage(m){
+ if(m.type==="welcome"){mySessionId=m.id; if(Array.isArray(m.players)){m.players.forEach(p=>{if(p.id!==mySessionId)makeRemotePlayer(p.id,p)});} updateOnlineCount(m.count||1);}
+ if(m.type==="player_joined"){if(m.id!==mySessionId)makeRemotePlayer(m.id,m);updateOnlineCount(m.count);toast("👋 "+m.name+" ist beigetreten!");}
+ if(m.type==="player_left"){removeRemotePlayer(m.id);updateOnlineCount(m.count);}
+ if(m.type==="player_move"){const g=onlinePlayers.get(m.id);if(g){g.position.x=m.x;g.position.z=m.z;g.rotation.y=m.rot||0;}}
+ if(m.type==="announcement"){showAnnouncement(m.text);toast("📢 Globales Announcement von "+(m.by||"Admin"));}
+ if(m.type==="admin_auth_result"){toast(m.ok?"👑 Server-Admin bestätigt!":"⛔ Falscher Server-Schlüssel.");} if(m.type==="server_info")updateOnlineCount(m.count||1);
+}
+function updateOnlineCount(n){const el=$("onlineCount");if(el)el.textContent=String(n||1)}
+
+
+function save(){localStorage.setItem(SAVE,JSON.stringify(state))}
+function fmt(n){return Math.floor(n).toLocaleString("de-CH")}
+function need(){return 100+state.level*80}
+function income(){return state.collection.reduce((a,p)=>a+(p.value||0),0)}
+function toast(t){$("toast").textContent=t;$("toast").classList.add("show");clearTimeout(toast.timer);toast.timer=setTimeout(()=>$("toast").classList.remove("show"),2200)}
+function ui(){
+ $("coins").textContent=fmt(state.coins);
+ $("level").textContent=state.level;
+ $("xpText").textContent=fmt(state.xp)+"/"+fmt(need());
+ $("xpBar").style.width=Math.min(100,state.xp/need()*100)+"%";
+ $("adminBtn").style.display=state.name==="LinoA"?"block":"none";
+}
+function addXP(n,admin=false){
+ n=Math.max(0,Math.floor(admin?n:n*0.25));
+ state.xp+=n;
+ let leveled=false;
+ while(state.xp>=need()){state.xp-=need();state.level++;leveled=true;unlockZones()}
+ if(leveled){toast("✨ LEVEL UP! Du bist jetzt Level "+state.level);burst(player?.position,0x7c5cff,35)}
+ save();ui();
+}
+function unlockZones(){
+ zones.forEach(z=>{if(state.level>=z[4]&&!state.unlocked.includes(z[0])){state.unlocked.push(z[0]);state.discoveredZones++;toast("🗺️ "+z[5]+" "+z[0]+" freigeschaltet!");burst(new THREE.Vector3(z[1],2,z[2]),0x28d8ff,50)}})
+}
+function startGame(){
+ const n=$("menuName").value.trim();if(n)state.name=n;
+ save();started=true;$("menu").style.display="none";$("hud").style.display="block";applyInputMode();ui();
+ if(player){player.position.set(0,0,18)}
+ claimGifts();
+ toast("Willkommen, "+state.name+"! 🥚");
+}
+function boot(){
+ scene=new THREE.Scene();scene.background=new THREE.Color(0x7fc8f0);scene.fog=new THREE.Fog(0x7fc8f0,85,230);
+ camera=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,.1,500);
+ renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:"high-performance"});
+ renderer.setPixelRatio(Math.min(devicePixelRatio,1.8));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=state.settings.shadows;renderer.shadowMap.type=THREE.PCFSoftShadowMap;$("game").appendChild(renderer.domElement);
+ clock=new THREE.Clock();
+ scene.add(new THREE.HemisphereLight(0xbde7ff,0x35513c,2.0));
+ const sun=new THREE.DirectionalLight(0xffffff,2.4);sun.position.set(35,80,20);sun.castShadow=true;sun.shadow.mapSize.set(1536,1536);scene.add(sun);
+ buildWorld();buildPlayer();buildBase();bind();
+ $("loading").style.opacity=0;setTimeout(()=>$("loading").remove(),550);
+ $("menu").style.display="grid";$("menuName").value=state.name==="Player"?"":state.name;
+ animate();
+}
+function material(c,rough=.86,metal=0){return new THREE.MeshStandardMaterial({color:c,roughness:rough,metalness:metal})}
+function meshBox(x,y,z,s,c,cast=true){
+ const m=new THREE.Mesh(new THREE.BoxGeometry(...s),material(c));m.position.set(x,y,z);m.castShadow=cast;m.receiveShadow=true;scene.add(m);world.push(m);return m
+}
+function cylinder(x,y,z,r,h,c){
+ const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,18),material(c));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);world.push(m);return m
+}
+function label(text,scale=1){
+ const c=document.createElement("canvas");c.width=640;c.height=150;const x=c.getContext("2d");
+ x.fillStyle="rgba(5,10,20,.78)";x.roundRect(10,22,620,106,24);x.fill();
+ x.fillStyle="#fff";x.font="900 34px Arial";x.textAlign="center";x.fillText(text,320,87);
+ const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthWrite:false}));s.scale.set(8*scale,1.9*scale,1);return s;
+}
+function buildWorld(){
+ const g=meshBox(0,-1,0,[250,2,250],0x3f8c59,false);
+ zones.forEach((z,i)=>{
+  const [name,x,zz,color,req,icon]=z;
+  meshBox(x,0,zz,[43,1.1,43],color,false);
+  const sign=label(icon+" "+name+(state.level<req?"  ·  🔒 LV "+req:""),.9);sign.position.set(x,7,zz);scene.add(sign);
+  // distinctive scenery
+  for(let j=0;j<11;j++){
+   const a=(j/11)*Math.PI*2+i*.7, r=12+(j%3)*2;
+   const px=x+Math.cos(a)*r,pz=zz+Math.sin(a)*r;
+   if(name==="Green Forest"){cylinder(px,2,pz,1,4,0x70432d);cylinder(px,5,pz,3,5,0x257c45)}
+   else if(name==="Desert"){cylinder(px,1.3,pz,.9,2.6,0x8f6a43)}
+   else if(name==="Volcano"){cylinder(px,1.5,pz,1.1,3,0x4b3d3b)}
+   else if(name==="Space Zone"){const r1=cylinder(px,1,pz,1.3,2,0x515a91);r1.rotation.z=.4}
+   else {cylinder(px,1,pz,.75,2,0x6b7077)}
+  }
+  if(name==="Ocean"){
+   for(let j=0;j<9;j++){const w=new THREE.Mesh(new THREE.TorusGeometry(2.5,.08,8,24),material(0x8feeff));w.rotation.x=Math.PI/2;w.position.set(x-14+j*3,1.1,zz+7*Math.sin(j));scene.add(w)}
+  }
+ });
+ // central plaza and roads
+ const plaza=new THREE.Mesh(new THREE.CylinderGeometry(14,14,.4,48),material(0x243650));plaza.position.y=.2;plaza.receiveShadow=true;scene.add(plaza);
+ for(let x=-110;x<=110;x+=10)meshBox(x,-.45,0,[7,.2,2.5],0xb49b78,false);
+ // egg pedestals
+ eggs.forEach((e,i)=>{
+  const a=i/eggs.length*Math.PI*2;const x=Math.cos(a)*8,z=Math.sin(a)*8;
+  meshBox(x,.5,z,[3,.8,3],0x1a2943);
+  createEgg(e,x,2,z);
+ });
+ // crystal rocks around starter
+ for(let i=0;i<20;i++){const a=i*.71,r=24+Math.sin(i)*4;const c=new THREE.Mesh(new THREE.DodecahedronGeometry(1.2+Math.random()),material([0x6c8cff,0xff69d8,0x5fffe3][i%3],.3,.2));c.position.set(Math.cos(a)*r,.8,Math.sin(a)*r);c.castShadow=true;scene.add(c)}
+}
+function createEgg(e,x,y,z){
+ const g=new THREE.Group();g.position.set(x,y,z);g.userData.egg=e;
+ const body=new THREE.Mesh(new THREE.SphereGeometry(1.45,28,20),material(e.color,.38,.05));body.scale.y=1.25;body.castShadow=true;g.add(body);
+ const stripe=new THREE.Mesh(new THREE.TorusGeometry(1.15,.09,10,32),material(0xffffff,.25,.15));stripe.rotation.x=Math.PI/2;g.add(stripe);
+ const top=new THREE.Mesh(new THREE.SphereGeometry(1.48,24,14,0,Math.PI*2,0,Math.PI/2),material(0xffffff,.25));top.position.y=.3;top.scale.y=.45;top.material.transparent=true;top.material.opacity=.25;g.add(top);
+ const lab=label(e.name+" · "+fmt(e.cost),.72);lab.position.y=2.8;g.add(lab);
+ scene.add(g);eggObjects.push(g);
+}
+function buildPlayer(){
+ player=new THREE.Group();
+ const body=new THREE.Mesh(new THREE.CapsuleGeometry(.55,1.05,6,12),material(0x4d68ff,.65,.05));body.position.y=1.05;body.castShadow=true;player.add(body);
+ const head=new THREE.Mesh(new THREE.SphereGeometry(.62,22,18),material(0xffd0ad));head.position.y=2.15;head.castShadow=true;player.add(head);
+ const visor=new THREE.Mesh(new THREE.BoxGeometry(.8,.2,.18),material(0x17253c,.25,.2));visor.position.set(0,2.17,.57);player.add(visor);
+ player.position.set(0,0,18);scene.add(player);
+}
+function buildBase(){
+ const b=meshBox(0,.2,18,[24,.4,19],0x2d476a,false);
+ const glow=new THREE.Mesh(new THREE.RingGeometry(8,8.5,48),new THREE.MeshBasicMaterial({color:0x45dfff,transparent:true,opacity:.28,side:THREE.DoubleSide}));glow.rotation.x=Math.PI/2;glow.position.set(0,.45,18);scene.add(glow);
+ const l=label(state.name+"  ·  PRIVATE BASE",.95);l.position.set(0,5.8,18);scene.add(l);
+}
+function rarityClass(r){return r.toLowerCase()}
+function chooseMutation(){
+ let n=Math.random(),acc=0;for(const m of mutations){acc+=m.chance;if(n<acc)return m}return mutations[0]
+}
+function choosePet(e){
+ const r=Math.random();const idx=r<.55?0:r<.82?1:r<.96?2:r<.995?3:Math.min(3,e.pets.length-1);return e.pets[idx]
+}
+function hatch(e){
+ const eggIndex=eggs.indexOf(e);
+ const hatchXP=20*(eggIndex+1);
+ if(state.level<e.req)return toast("🔒 Dieses Egg benötigt Level "+e.req);
+ if(state.coins<e.cost)return toast("💰 Nicht genug Coins!");
+ state.coins-=e.cost;state.totalHatches++;
+ const raw=choosePet(e), mut=chooseMutation();
+ const p={id:Date.now()+Math.random(),name:raw[0],rarity:raw[1],base:raw[2],mutation:mut.name,value:Math.floor(raw[2]*mut.mult)};
+ state.collection.push(p);state.mutations.push(mut.name);
+ addXP(hatchXP);save();ui();
+ playHatch(e,p);
+}
+function playHatch(e,p){
+ $("hatch").classList.add("show");
+ $("hatchBox").innerHTML=`<div class="muted">${e.name}</div><div class="bigEgg" id="bigEgg">🥚</div><h2>Das Ei schlüpft...</h2>`;
+ setTimeout(()=>{$("bigEgg")?.classList.add("crack")},800);
+ setTimeout(()=>{
+  $("hatchBox").innerHTML=`<div class="reveal">🧠</div><h2>${p.name}</h2><div class="rarity ${rarityClass(p.rarity)}">${p.rarity}</div><p>✨ Mutation: <b>${p.mutation}</b></p><p>💰 <b>${fmt(p.value)} Coins/s</b></p><button class="bigBtn" onclick="finishHatch()">ZUR SAMMLUNG</button>`;
+  burst(player.position,0x7c5cff,60);toast("🎉 "+p.name+" erhalten!");
+ },1250);
+}
+function finishHatch(){$("hatch").classList.remove("show");spawnPetVisual(state.collection.at(-1));checkAchievements()}
+function spawnPetVisual(p){
+ const g=new THREE.Group();const mut=mutations.find(m=>m.name===p.mutation)||mutations[0];
+ const b=new THREE.Mesh(new THREE.SphereGeometry(.72,20,16),material(mut.color,.42,.15));b.scale.y=.85;b.castShadow=true;g.add(b);
+ const eye=material(0x101622);for(const x of[-.2,.2]){const e=new THREE.Mesh(new THREE.SphereGeometry(.09,8,8),eye);e.position.set(x,.12,.63);g.add(e)}
+ const ring=new THREE.Mesh(new THREE.TorusGeometry(.9,.05,8,32),material(mut.color,.3,.3));ring.rotation.x=Math.PI/2;g.add(ring);
+ const l=label(p.name+" · "+p.mutation,.55);l.position.y=1.8;g.add(l);
+ g.position.set((Math.random()-.5)*9,.95,18+(Math.random()-.5)*6);g.userData.p=p;scene.add(g);pets3D.push(g);
+}
+function rebuildPets(){pets3D.forEach(p=>scene.remove(p));pets3D=[];state.collection.slice(-20).forEach(spawnPetVisual)}
+function openModal(content){$("window").innerHTML=content;$("modal").classList.add("show")}
+function closeModal(){$("modal").classList.remove("show")}
+function openEggs(){
+ const cards=eggs.map((e,i)=>'<div class="card"><h3>'+e.name+'</h3><div class="muted">'+e.zone+' · Level '+e.req+'</div><p>💰 '+fmt(e.cost)+' · ✨ '+(20*(i+1))+' XP pro Hatch</p><button onclick="hatch(eggs['+i+'])" '+(state.level<e.req?'disabled':'')+'>'+(state.level<e.req?'🔒 GESPERRT':'🥚 ÖFFNEN')+'</button></div>').join("");
+ openModal('<button class="close" onclick="closeModal()">✕</button><h2>🥚 Egg Plaza</h2><div class="grid">'+cards+'</div>');
+}
+function openCollection(){
+ const cards=state.collection.length?state.collection.map(p=>'<div class="card"><h3>🧠 '+p.name+'</h3><div class="rarity '+rarityClass(p.rarity)+'">'+p.rarity+'</div><p>✨ '+p.mutation+'</p><div class="muted">💰 '+fmt(p.value)+' Coins/s</div></div>').join(""):'<div class="card">Noch keine Brainrots. Öffne dein erstes Egg!</div>';
+ openModal('<button class="close" onclick="closeModal()">✕</button><h2>🧠 Sammlung · '+state.collection.length+'</h2><p class="muted">Gesamteinkommen: '+fmt(income())+' Coins/s</p><div class="grid">'+cards+'</div>');
+}
+function openShop(){
+ const costs=[0,500,2000,10000,50000,250000];const next=state.speedLevel<6?costs[state.speedLevel]:"MAX";
+ openModal(`<button class="close" onclick="closeModal()">✕</button><h2>⚡ Upgrade Shop</h2><div class="grid">
+ <div class="card"><h3>⚡ Speed</h3><p>Level ${state.speedLevel}/6</p><p>Geschwindigkeit: ${(7*(1+(state.speedLevel-1)*.1)).toFixed(1)}</p><p>Preis: ${typeof next==="number"?fmt(next):next}</p><button onclick="buySpeed()" ${state.speedLevel>=6?"disabled":""}>UPGRADEN</button></div>
+ <div class="card"><h3>💰 Coin-Multiplikator</h3><p>Brainrots verdienen durch Seltenheit und Mutation.</p><div class="muted">Sammle bessere Brainrots für mehr Einkommen.</div></div>
+ </div>`)
+}
+function buySpeed(){const c=[0,500,2000,10000,50000,250000];if(state.speedLevel>=6)return;if(state.coins<c[state.speedLevel])return toast("Nicht genug Coins!");state.coins-=c[state.speedLevel];state.speedLevel++;save();ui();toast("⚡ Speed Level "+state.speedLevel+"!");openShop()}
+const questDefs=[
+ ["Egg Starter","Öffne 5 Eggs",()=>state.totalHatches>=5,800,120],
+ ["Coin Collector","Sammle 10.000 Coins",()=>state.totalCoins>=10000||state.coins>=10000,1800,250],
+ ["Mutation Hunter","Erhalte eine Mutation",()=>state.mutations.some(m=>m!=="Normal"),1200,180],
+ ["Explorer","Schalte 4 Gebiete frei",()=>state.unlocked.length>=4,2500,400],
+ ["High Level","Erreiche Level 25",()=>state.level>=25,6000,900]
+];
+function openQuests(){
+ const cards=questDefs.map((q,i)=>{const done=q[2](),claimed=state.quests[i];return '<div class="card"><h3>'+(done?'✅':'🎯')+' '+q[0]+'</h3><p>'+q[1]+'</p><div class="muted">🎁 '+fmt(q[3])+' Coins + '+q[4]+' XP</div><button onclick="claimQuest('+i+')" '+(!done||claimed?'disabled':'')+'>'+(claimed?'ABGEHOLT':done?'BELOHNUNG':'NOCH NICHT')+'</button></div>';}).join("");
+ openModal('<button class="close" onclick="closeModal()">✕</button><h2>🎯 Quests</h2><div class="grid">'+cards+'</div>');
+}
+function claimQuest(i){const q=questDefs[i];if(!q[2]())return toast("Quest noch nicht erfüllt.");if(state.quests[i])return;state.quests[i]=true;state.coins+=q[3];state.totalCoins+=q[3];addXP(q[4]);save();openQuests();toast("🎁 Quest abgeschlossen!")}
+function openDaily(){
+ const today=new Date().toDateString(),can=state.lastDaily!==today;
+ openModal(`<button class="close" onclick="closeModal()">✕</button><h2>🎁 Daily Rewards</h2><div class="card"><h3>🔥 Streak: ${state.dailyStreak}</h3><p>Heute: ${state.dailyStreak%3===0?"💰 5.000 Coins":state.dailyStreak%3===1?"✨ 500 XP":"🥚 kostenloses Basic Egg"}</p><button onclick="claimDaily()" ${can?"":"disabled"}>${can?"ABHOLEN":"HEUTE BEREITS ABGEHOLT"}</button></div>`)
+}
+function claimDaily(){const today=new Date().toDateString();if(state.lastDaily===today)return;state.lastDaily=today;state.dailyStreak++;if(state.dailyStreak%3===1){state.coins+=5000;state.totalCoins+=5000}else if(state.dailyStreak%3===2)addXP(500);else{const e=eggs[0],p=choosePet(e),m=chooseMutation();state.collection.push({name:p[0],rarity:p[1],base:p[2],mutation:m.name,value:p[2]*m.mult});spawnPetVisual(state.collection.at(-1))}save();ui();openDaily();toast("🎁 Daily Reward erhalten!")}
+const achievements=[
+ ["First Egg","Öffne dein erstes Egg",()=>state.totalHatches>=1],
+ ["Collector","Sammle 10 Brainrots",()=>state.collection.length>=10],
+ ["Mutation Hunter","Entdecke eine Mutation",()=>state.mutations.some(m=>m!=="Normal")],
+ ["Rich Player","Besitze 100.000 Coins",()=>state.coins>=100000],
+ ["Explorer","Schalte 5 Gebiete frei",()=>state.unlocked.length>=5],
+ ["Secret Hunter","Erhalte einen Secret Brainrot",()=>state.collection.some(p=>p.rarity==="Secret")]
+];
+function checkAchievements(){achievements.forEach((a,i)=>{if(a[2]()&&!state.achievements[i]){state.achievements[i]=true;toast("🏆 Achievement: "+a[0]);addXP(100)}});save()}
+function openAchievements(){
+ checkAchievements();
+ const cards=achievements.map((a,i)=>'<div class="card"><h3>'+(state.achievements[i]?'🏆':'🔒')+' '+a[0]+'</h3><p>'+a[1]+'</p><div class="muted">'+(state.achievements[i]?'FREIGESCHALTET':'Noch gesperrt')+'</div></div>').join("");
+ openModal('<button class="close" onclick="closeModal()">✕</button><h2>🏆 Achievements</h2><div class="grid">'+cards+'</div>');
+}
+function openMap(){
+ const cards=zones.map(z=>'<div class="card"><h3>'+z[5]+' '+z[0]+'</h3><p>Level '+z[4]+'</p><div class="muted">'+(state.unlocked.includes(z[0])?'✅ FREIGESCHALTET':'🔒 GESPERRT')+'</div></div>').join("");
+ openModal('<button class="close" onclick="closeModal()">✕</button><h2>🗺️ Weltkarte</h2><div class="grid">'+cards+'</div>');
+}
+function setInputMode(mode){
+ state.settings.inputMode=mode;save();applyInputMode();openSettings();toast(mode==="mobile"?"📱 Mobile-Steuerung aktiviert":"🖥️ Maus & Tastatur aktiviert");
+}
+function applyInputMode(){
+ const mobile=state.settings.inputMode==="mobile";
+ $("mobile").style.display=mobile?"block":"none";
+ if(mobile)document.exitPointerLock?.();
+}
+function openSettings(){openModal(`<button class="close" onclick="closeModal()">✕</button><h2>⚙️ Einstellungen</h2>
+<div class="card"><h3>🎮 Steuerung</h3><p class="muted">Wähle Maus & Tastatur oder die mobile Steuerung.</p><div style="display:flex;gap:10px;flex-wrap:wrap"><button onclick="setInputMode('keyboard')" style="${state.settings.inputMode!=="mobile"?'outline:2px solid #7c5cff':''}">🖥️ Maus & Tastatur</button><button onclick="setInputMode('mobile')" style="${state.settings.inputMode==="mobile"?'outline:2px solid #7c5cff':''}">📱 Mobile</button></div></div>
+<div class="card"><h3>Spielername</h3><input id="newName" value="${state.name}" maxlength="18" style="width:100%;padding:11px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white"><button onclick="changeName()">Speichern</button></div>
+<div class="card"><h3>Grafik</h3><button onclick="toggleShadows()">Schatten: ${state.settings.shadows?"AN":"AUS"}</button></div>
+<div class="card"><h3>Speicher</h3><button style="background:#a52d49" onclick="resetSave()">Fortschritt löschen</button></div>`)}
+function changeName(){state.name=$("newName").value.trim()||"Player";save();ui();if(socket&&socket.readyState===1){socket.close();}else if(started){connectOnline();}toast("Name gespeichert!");openSettings()}
+function toggleShadows(){state.settings.shadows=!state.settings.shadows;renderer.shadowMap.enabled=state.settings.shadows;save();openSettings()}
+function resetSave(){if(confirm("Wirklich den lokalen Fortschritt löschen?")){localStorage.removeItem(SAVE);location.reload()}}
+function openHelp(){openModal(`<button class="close" onclick="closeModal()">✕</button><h2>❓ So spielst du</h2><div class="card"><p><b>WASD</b> bewegen · <b>Maus</b> Kamera · <b>Shift</b> Sprinten · <b>E</b> nächstes Egg</p><p>Öffne Eggs, sammle Brainrots, entdecke Mutationen und schalte neue Zonen über dein Level frei.</p><p>Brainrots produzieren automatisch Coins. Im Shop kannst du deine Geschwindigkeit verbessern.</p><p><b>Wichtig:</b> Es gibt kein Stehlen und kein Bauen. Andere Spieler können deinen Fortschritt nicht verändern.</p></div>`)}
+function getAllBrainrots(){
+ const out=[];
+ eggs.forEach(e=>e.pets.forEach(p=>{
+  out.push({name:p[0],rarity:p[1],base:p[2],source:e.name});
+ }));
+ const adminPets=[
+  ["👑 Admin Brainrot","ADMIN",50000],["⚡ Thunder Admin","ADMIN",75000],
+  ["🌌 Void King","ADMIN",100000],["🔥 Inferno King","ADMIN",125000],
+  ["💎 Diamond Lord","ADMIN",150000],["🌈 Rainbow Emperor","ADMIN",200000],
+  ["👾 Glitch Brainrot","ADMIN",300000]
+ ];
+ adminPets.forEach(p=>out.push({name:p[0],rarity:p[1],base:p[2],source:"ADMIN"}));
+ const seen=new Set();
+ return out.filter(p=>!seen.has(p.name)&&seen.add(p.name));
+}
+function mutationOptions(selected){
+ return mutations.map(m=>'<option value="'+m.name+'" '+(m.name===selected?'selected':'')+'>'+m.name+' · x'+m.mult+'</option>').join("");
+}
+function brainrotOptions(){
+ return getAllBrainrots().map((p,i)=>'<option value="'+i+'">'+p.name+' · '+p.rarity+' · '+p.source+'</option>').join("");
+}
+function openAdmin(){
+ if(state.name!=="LinoA")return toast("⛔ Kein Admin-Zugriff.");
+ const all=getAllBrainrots();
+ openModal('<button class="close" onclick="closeModal()">✕</button><h2>👑 ADMIN PANEL · LinoA</h2><div class="grid">'+
+ '<div class="card"><h3>💰 Coins</h3><button onclick="adminCoins(100000)">+100.000</button><button onclick="adminCoins(1000000)">+1.000.000</button></div>'+
+ '<div class="card"><h3>✨ XP</h3><button onclick="addXP(5000,true);save();ui();openAdmin();toast(\'+5.000 XP\')">+5.000 XP</button><button onclick="addXP(50000,true);save();ui();openAdmin();toast(\'+50.000 XP\')">+50.000 XP</button></div>'+
+ '<div class="card"><h3>📈 Fortschritt</h3><button onclick="state.level+=10;unlockZones();save();ui();openAdmin();toast(\'+10 Level\')">+10 Level</button><button onclick="adminUnlockAll()">Alle Zonen freischalten</button></div>'+
+ '<div class="card"><h3>🔐 Online-Admin</h3><input id="adminServerSecret" type="password" placeholder="Server-Schlüssel" style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-bottom:8px"><button onclick="adminAuth()">🔑 Admin authentifizieren</button><p class="muted">Der Schlüssel wird nur an deinen Online-Server gesendet.</p></div><div class="card"><h3>📢 Announcement</h3><input id="announcementText" maxlength="180" placeholder="Nachricht an alle..." style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-bottom:8px"><button onclick="adminAnnouncement()">📢 Senden</button><p class="muted">Sendet die Nachricht über den Multiplayer-Server an alle aktuell verbundenen Spieler.</p></div>'+
+ '<div class="card"><h3>🧠 Brainrot spawnen</h3><select id="spawnBrainrot" style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-bottom:8px">'+brainrotOptions()+'</select><select id="spawnMutation" style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-bottom:8px">'+mutationOptions("Normal")+'</select><button onclick="adminSpawnSelected()">🧠 Spawnen</button><p class="muted">'+all.length+' Brainrots verfügbar · Mutation frei wählbar.</p></div>'+
+ '<div class="card"><h3>🎁 Brainrot schenken</h3><input id="giftPlayer" placeholder="Spielername" value="'+state.name+'" style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-bottom:8px"><select id="giftPet" style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white">'+all.map((p,i)=>'<option value="'+i+'">'+p.name+' · '+p.rarity+'</option>').join("")+'</select><select id="giftMutation" style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-top:8px;margin-bottom:8px>'+mutationOptions("Normal")+'</select><button onclick="adminGiftSelected()">🎁 Verschenken</button></div>'+
+ '<div class="card"><h3>🌙 Zeit</h3><button onclick="toggleDay()">Tag/Nacht wechseln</button></div>'+
+ '</div><p class="muted">Admin-Brainrots sind exklusiv. Normale Brainrots können mit jeder gewünschten Mutation gespawnt oder verschenkt werden. Kein Stehlen.</p>');
+}
+function adminCoins(n){state.coins+=n;state.totalCoins+=n;save();ui();openAdmin();toast("💰 +"+fmt(n)+" Coins")}
+function adminUnlockAll(){state.level=Math.max(state.level,150);unlockZones();save();ui();openAdmin();toast("🗺️ Alle Zonen freigeschaltet")}
+function makeAdminPet(br,mutationName){
+ const mut=mutations.find(m=>m.name===mutationName)||mutations[0];
+ return {id:Date.now()+Math.random(),name:br.name,rarity:br.rarity,base:br.base,mutation:mut.name,value:Math.floor(br.base*mut.mult),giftedBy:"LinoA"};
+}
+function adminSpawnSelected(){
+ const all=getAllBrainrots(), br=all[Number($("spawnBrainrot").value)||0];
+ const p=makeAdminPet(br,$("spawnMutation").value);
+ state.collection.push(p);state.mutations.push(p.mutation);spawnPetVisual(p);save();ui();openAdmin();
+ toast("🧠 "+p.name+" · "+p.mutation+" gespawnt!");
+}
+function adminGiftSelected(){
+ const all=getAllBrainrots(), br=all[Number($("giftPet").value)||0];
+ const recipient=( $("giftPlayer").value||"" ).trim()||state.name;
+ const gift=makeAdminPet(br,$("giftMutation").value);
+ if(recipient===state.name){
+  state.collection.push(gift);state.mutations.push(gift.mutation);spawnPetVisual(gift);save();ui();openAdmin();
+  toast("🎁 "+gift.name+" · "+gift.mutation+" an "+recipient+" verschenkt!");
+ }else{
+  state.pendingGifts[recipient]=(state.pendingGifts[recipient]||[]);
+  state.pendingGifts[recipient].push(gift);save();openAdmin();
+  toast("🎁 Geschenk für "+recipient+" vorgemerkt.");
+ }
+}
+function adminAuth(){
+ const secret=( $("adminServerSecret")?.value||"" ).trim();
+ if(!secret)return toast("🔐 Server-Schlüssel eingeben.");
+ sendNet({type:"admin_auth",secret});
+}
+function adminAnnouncement(){
+ const msg=( $("announcementText").value||"" ).trim();
+ if(!msg)return toast("📢 Bitte eine Nachricht eingeben.");
+ if(!socket||socket.readyState!==1)return toast("🌐 Nicht mit dem Online-Server verbunden.");
+ state.announcements=state.announcements||[];
+ state.announcements.push({text:msg,by:state.name,time:Date.now()});
+ if(state.announcements.length>20)state.announcements.shift();
+ save();sendNet({type:"admin_announcement",text:msg,by:state.name});showAnnouncement(msg);openAdmin();toast("📢 Globales Announcement gesendet!");
+}
+function showAnnouncement(msg){
+ const el=$("announcement"); if(!el)return;
+ el.innerHTML="📢 <b>ANNOUNCEMENT</b><br>"+String(msg).replace(/[&<>"']/g,s=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[s]));
+ el.classList.remove("show");void el.offsetWidth;el.classList.add("show");
+ clearTimeout(showAnnouncement.timer);showAnnouncement.timer=setTimeout(()=>el.classList.remove("show"),7000);
+}
+function adminSpawn(){
+ const all=getAllBrainrots().filter(p=>p.source==="ADMIN");
+ const p=makeAdminPet(all[Math.floor(Math.random()*all.length)],"Cosmic");
+ state.collection.push(p);state.mutations.push(p.mutation);spawnPetVisual(p);save();toast("👑 Exklusiver Brainrot gespawnt!");openAdmin()
+}
+function claimGifts(){
+ const gifts=state.pendingGifts?.[state.name]||[]; if(!gifts.length)return;
+ gifts.forEach(g=>{state.collection.push(g);state.mutations.push(g.mutation);spawnPetVisual(g)});
+ delete state.pendingGifts[state.name];save();ui();toast("🎁 "+gifts.length+" Admin-Geschenk(e) erhalten!");
+}
+function toggleDay(){day=day?0:1;scene.background.lerp(new THREE.Color(day?0x09132d:0x7fc8f0),1);scene.fog.color.copy(scene.background);toast(day?"🌙 Nacht":"☀️ Tag");}
+function burst(pos,color,count){
+ if(!pos||!scene)return;
+ for(let i=0;i<count;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(.06,6,6),new THREE.MeshBasicMaterial({color,transparent:true}));m.position.copy(pos);m.userData.vel=new THREE.Vector3((Math.random()-.5)*5,Math.random()*5,(Math.random()-.5)*5);m.userData.life=1;scene.add(m);world.push(m)}
+}
+function interact(){
+ let best=null,bd=7;
+ eggObjects.forEach(o=>{const d=o.position.distanceTo(player.position);if(d<bd){bd=d;best=o.userData.egg}});
+ if(best)hatch(best);else toast("🥚 Geh näher zu einem Egg.")
+}
+function bind(){
+ addEventListener("resize",()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+ addEventListener("keydown",e=>{if(state.settings.inputMode==="mobile")return;keys[e.key.toLowerCase()]=true;if(e.key.toLowerCase()==="e")interact();if(e.key==="Escape"){closeModal();$("hatch").classList.remove("show")}});
+ addEventListener("keyup",e=>{if(state.settings.inputMode==="mobile")return;keys[e.key.toLowerCase()]=false});
+ renderer.domElement.addEventListener("click",()=>renderer.domElement.requestPointerLock?.());
+ addEventListener("mousemove",e=>{if(state.settings.inputMode==="mobile")return;if(document.pointerLockElement===renderer.domElement)yaw-=e.movementX*.002});
+ $("modal").addEventListener("click",e=>{if(e.target.id==="modal")closeModal()});
+ // touch joystick
+ const st=$("stick"),kn=$("knob");let active=false;
+ const move=e=>{if(!active)return;const t=e.touches[0],r=st.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=t.clientX-cx,dy=t.clientY-cy,L=Math.hypot(dx,dy),max=48;if(L>max){dx=dx/L*max;dy=dy/L*max}joy.x=dx/max;joy.y=dy/max;kn.style.transform=`translate(${dx}px,${dy}px)`};
+ st.addEventListener("touchstart",e=>{active=true;move(e)},{passive:true});st.addEventListener("touchmove",move,{passive:true});st.addEventListener("touchend",()=>{active=false;joy.x=joy.y=0;kn.style.transform=""});
+ $("interact").addEventListener("touchstart",interact);$("run").addEventListener("touchstart",()=>keys.shift=true);$("run").addEventListener("touchend",()=>keys.shift=false);
+}
+function animate(){
+ requestAnimationFrame(animate);
+ const dt=Math.min(.035,clock.getDelta());
+ if(started){
+  let mobileMode=state.settings.inputMode==="mobile"; let f=(mobileMode?0:(keys.w?-1:0)+(keys.s?1:0))+joy.y,r=(mobileMode?0:(keys.d?1:0)+(keys.a?-1:0))+joy.x;
+  if(f||r){const L=Math.hypot(f,r)||1;f/=L;r/=L;const speed=7*(1+(state.speedLevel-1)*.1)*(keys.shift?1.5:1);player.position.x+=Math.sin(yaw)*f*speed*dt+Math.cos(yaw)*r*speed*dt;player.position.z+=Math.cos(yaw)*f*speed*dt-Math.sin(yaw)*r*speed*dt;player.rotation.y=Math.atan2(Math.sin(yaw)*f+Math.cos(yaw)*r,Math.cos(yaw)*f-Math.sin(yaw)*r)}
+  player.position.x=Math.max(-118,Math.min(118,player.position.x));player.position.z=Math.max(-118,Math.min(118,player.position.z));
+  const target=new THREE.Vector3(player.position.x-Math.sin(yaw)*11,player.position.y+6.5,player.position.z-Math.cos(yaw)*11);camera.position.lerp(target,.13);camera.lookAt(player.position.x,1.3,player.position.z);
+ }
+ eggObjects.forEach((e,i)=>{e.rotation.y+=dt*.45;e.position.y=2+Math.sin(performance.now()*.0015+i)*.12});
+ pets3D.forEach((p,i)=>{p.position.y=.95+Math.sin(performance.now()*.002+i)*.08;p.rotation.y+=dt*.5});
+ // particles
+ for(let i=world.length-1;i>=0;i--){const o=world[i];if(o.userData?.life){o.userData.life-=dt;o.position.addScaledVector(o.userData.vel,dt);o.userData.vel.y-=8*dt;o.material.opacity=Math.max(0,o.userData.life);if(o.userData.life<=0){scene.remove(o);world.splice(i,1)}}}
+ renderer.render(scene,camera);
+}
+setInterval(()=>{if(started){const inc=Math.max(1,income());state.coins+=inc;state.totalCoins+=inc;addXP(Math.max(1,Math.floor(inc/500)));save();ui();checkAchievements()}},1000);
+
+boot();
+applyInputMode();
+</script>
+</body>
+</html>
