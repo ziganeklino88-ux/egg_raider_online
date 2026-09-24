@@ -1,13 +1,10 @@
 services:
   - type: web
     name: egg-raiders-online
-    runtime: node
-    plan: free
+    env: node
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /health
     envVars:
-      - key: NODE_ENV
-        value: production
       - key: ADMIN_SECRET
         sync: false

@@ -24,6 +24,8 @@ canvas{display:block}button,input{font:inherit}button{border:0;color:#fff;cursor
 @media(max-width:720px){.menuBtns{grid-template-columns:1fr}.stat{padding:7px 9px}.stat strong{font-size:14px}.stat small{font-size:8px}.top{left:7px;right:7px}.levelStat{min-width:105px}#right{right:7px;top:72px}.hbtn{min-width:96px;padding:9px;font-size:12px}.pill{font-size:10px}#mobile{display:block}.window{padding:16px}}
 
 #announcement{position:fixed;top:78px;left:50%;transform:translate(-50%,-20px);z-index:120;display:none;max-width:min(760px,92vw);padding:14px 22px;border:1px solid rgba(255,212,90,.55);border-radius:16px;background:linear-gradient(135deg,rgba(35,25,5,.96),rgba(12,18,32,.96));box-shadow:0 14px 45px rgba(0,0,0,.45);text-align:center;pointer-events:none}#announcement.show{display:block;animation:announceIn .35s ease}@keyframes announceIn{from{opacity:0;transform:translate(-50%,-35px)}to{opacity:1;transform:translate(-50%,0)}}
+
+#playerList .playerOnline{color:#58f28a}.playerOffline{color:#ff7f7f}.playerRowOnline,.playerRowOffline{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:12px;margin:6px 0;background:#0b1424;border:1px solid #263854}.playerRowOnline{border-color:#1d6b43}.playerRowOffline{opacity:.72;border-color:#63353b}.statusDot{font-size:12px;font-weight:900}.playerMeta{font-size:12px;color:#8fa1bb}.playerMe{border-color:#7c5cff!important;box-shadow:0 0 0 1px #7c5cff33}
 </style>
 </head>
 <body>
@@ -46,7 +48,7 @@ canvas{display:block}button,input{font:inherit}button{border:0;color:#fff;cursor
 <div id="hud">
  <div class="top">
   <div class="stat"><small>COINS</small><strong id="coins">0</strong></div>
-  <div class="stat"><small>LEVEL</small><strong id="level">1</strong></div><div class="stat"><small>ONLINE</small><strong id="onlineCount">1</strong></div>
+  <div class="stat"><small>LEVEL</small><strong id="level">1</strong></div>
   <div class="stat levelStat"><small>XP <span id="xpText">0/100</span></small><div class="xp"><i id="xpBar"></i></div></div>
  </div>
  <div id="right">
@@ -64,7 +66,7 @@ canvas{display:block}button,input{font:inherit}button{border:0;color:#fff;cursor
 </div>
 
 <div id="mobile"><div class="stick" id="stick"><div class="knob" id="knob"></div></div><div class="touches"><button class="touch" id="interact">E</button><button class="touch" id="run">⚡</button></div></div>
-<div id="toast"></div><div id="announcement"></div><div id="networkStatus" style="position:fixed;left:14px;bottom:72px;z-index:90;padding:7px 11px;border-radius:10px;background:rgba(7,13,25,.8);border:1px solid rgba(255,255,255,.12);font-size:12px;color:#9fb0c8">🟡 Verbinde…</div>
+<div id="toast"></div><div id="announcement"></div>
 <div id="modal" class="modal"><div class="window" id="window"></div></div>
 <div id="hatch"><div class="hatchBox" id="hatchBox"></div></div>
 
@@ -123,40 +125,6 @@ let yaw=0,pitch=-.28,keys={},joy={x:0,y:0},world=[],pets3D=[],eggObjects=[];
 let started=false,day=0;
 const v=new THREE.Vector3();
 
-// Online multiplayer / global announcements
-const WS_URL = (location.protocol === "http:" || location.protocol === "https:") ? ((location.protocol === "https:" ? "wss://" : "ws://") + location.host) : "";
-let socket=null, onlinePlayers=new Map(), lastNetSend=0, mySessionId=null;
-function networkStatus(text,ok){ const el=$("networkStatus"); if(!el)return; el.textContent=(ok?"🟢 ":"🟡 ")+text; el.style.color=ok?"#7dffb2":"#ffd56a"; }
-function connectOnline(){
- if(!WS_URL){networkStatus("Offline",false);return;}
- try{
-  socket=new WebSocket(WS_URL);
-  socket.onopen=()=>{networkStatus("Online",true); socket.send(JSON.stringify({type:"join",name:state.name}));};
-  socket.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch{return;} handleNetworkMessage(m)};
-  socket.onclose=()=>{networkStatus("Offline – Server nicht verbunden",false); setTimeout(()=>{if(started)connectOnline()},3000)};
-  socket.onerror=()=>networkStatus("Verbindungsfehler",false);
- }catch(e){networkStatus("Offline",false)}
-}
-function sendNet(m){if(socket&&socket.readyState===1)socket.send(JSON.stringify(m));}
-function makeRemotePlayer(id,data){
- const g=new THREE.Group();
- const body=new THREE.Mesh(new THREE.CapsuleGeometry(.55,1.05,6,12),material(0xff6a8a,.65,.05)); body.position.y=1.05; g.add(body);
- const head=new THREE.Mesh(new THREE.SphereGeometry(.62,18,14),material(0xffd0ad)); head.position.y=2.15; g.add(head);
- const lab=label(String(data.name||"Player"),.65); lab.position.y=3.15; g.add(lab);
- g.position.set(Number(data.x)||0,0,Number(data.z)||0); scene.add(g); onlinePlayers.set(id,g); return g;
-}
-function removeRemotePlayer(id){const g=onlinePlayers.get(id);if(g){scene.remove(g);onlinePlayers.delete(id)}}
-function handleNetworkMessage(m){
- if(m.type==="welcome"){mySessionId=m.id; if(Array.isArray(m.players)){m.players.forEach(p=>{if(p.id!==mySessionId)makeRemotePlayer(p.id,p)});} updateOnlineCount(m.count||1);}
- if(m.type==="player_joined"){if(m.id!==mySessionId)makeRemotePlayer(m.id,m);updateOnlineCount(m.count);toast("👋 "+m.name+" ist beigetreten!");}
- if(m.type==="player_left"){removeRemotePlayer(m.id);updateOnlineCount(m.count);}
- if(m.type==="player_move"){const g=onlinePlayers.get(m.id);if(g){g.position.x=m.x;g.position.z=m.z;g.rotation.y=m.rot||0;}}
- if(m.type==="announcement"){showAnnouncement(m.text);toast("📢 Globales Announcement von "+(m.by||"Admin"));}
- if(m.type==="admin_auth_result"){toast(m.ok?"👑 Server-Admin bestätigt!":"⛔ Falscher Server-Schlüssel.");} if(m.type==="server_info")updateOnlineCount(m.count||1);
-}
-function updateOnlineCount(n){const el=$("onlineCount");if(el)el.textContent=String(n||1)}
-
-
 function save(){localStorage.setItem(SAVE,JSON.stringify(state))}
 function fmt(n){return Math.floor(n).toLocaleString("de-CH")}
 function need(){return 100+state.level*80}
@@ -187,6 +155,34 @@ function startGame(){
  claimGifts();
  toast("Willkommen, "+state.name+"! 🥚");
 }
+/* ================= ONLINE PLAYER LIST ================= */
+let onlineSocket=null;
+let onlinePlayers=[];
+let playerServerReady=false;
+let serverPlayerId=null;
+function wsUrl(){const proto=location.protocol==="https:"?"wss:":"ws:";return proto+"//"+location.host;}
+function connectPresence(){
+  if(!location.host || location.protocol==="file:") return;
+  try{
+    onlineSocket=new WebSocket(wsUrl());
+    onlineSocket.onopen=()=>{playerServerReady=true;onlineSocket.send(JSON.stringify({type:"join",name:state.name}));renderPlayerList();};
+    onlineSocket.onmessage=e=>{try{const msg=JSON.parse(e.data);if(msg.type==="presence"){onlinePlayers=msg.players||[];serverPlayerId=msg.id||serverPlayerId;renderPlayerList();}if(msg.type==="announcement"&&msg.text)showAnnouncement(msg.text);}catch(err){}};
+    onlineSocket.onclose=()=>{playerServerReady=false;renderPlayerList();setTimeout(connectPresence,4000);};
+    onlineSocket.onerror=()=>{};
+  }catch(err){}
+}
+function sendPresence(){if(onlineSocket?.readyState===1)onlineSocket.send(JSON.stringify({type:"update",name:state.name}));}
+function renderPlayerList(){const online=(onlinePlayers||[]).filter(p=>p.online);$("onlineCount").textContent=online.length||1;}
+function openPlayerList(){
+  const rows=(onlinePlayers||[]).slice().sort((a,b)=>{if(a.online!==b.online)return a.online?-1:1;if(a.name===state.name)return -1;if(b.name===state.name)return 1;return String(a.name).localeCompare(String(b.name));});
+  const online=rows.filter(p=>p.online);
+  const html=rows.length?rows.map(p=>{const me=p.name===state.name, on=!!p.online;return `<div class="${on?'playerRowOnline':'playerRowOffline'} ${me?'playerMe':''}"><div><b>${on?'🟢':'🔴'} ${escapeHtml(p.name||'Player')}</b><div class="playerMeta">${me?'Du · ':''}${on?'Online':'Offline'}${!on&&p.lastSeen?` · zuletzt vor ${formatAgo(p.lastSeen)}`:''}</div></div><span class="statusDot ${on?'playerOnline':'playerOffline'}">${on?'ONLINE':'OFFLINE'}</span></div>`;}).join(''):'<div class="card">Noch keine Spielerdaten vom Server.</div>';
+  openModal(`<button class="close" onclick="closeModal()">✕</button><h2>👥 Spieler</h2><p class="muted">${online.length} online · ${rows.filter(p=>!p.online).length} offline</p>${html}<button class="secondary" onclick="closeModal()">Schließen</button>`);
+}
+function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function formatAgo(ts){const sec=Math.max(0,Math.floor((Date.now()-ts)/1000));if(sec<60)return sec+"s";const min=Math.floor(sec/60);if(min<60)return min+" Min.";return Math.floor(min/60)+" Std.";}
+setInterval(()=>{sendPresence();},5000);
+
 function boot(){
  scene=new THREE.Scene();scene.background=new THREE.Color(0x7fc8f0);scene.fog=new THREE.Fog(0x7fc8f0,85,230);
  camera=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,.1,500);
@@ -369,7 +365,7 @@ function openSettings(){openModal(`<button class="close" onclick="closeModal()">
 <div class="card"><h3>Spielername</h3><input id="newName" value="${state.name}" maxlength="18" style="width:100%;padding:11px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white"><button onclick="changeName()">Speichern</button></div>
 <div class="card"><h3>Grafik</h3><button onclick="toggleShadows()">Schatten: ${state.settings.shadows?"AN":"AUS"}</button></div>
 <div class="card"><h3>Speicher</h3><button style="background:#a52d49" onclick="resetSave()">Fortschritt löschen</button></div>`)}
-function changeName(){state.name=$("newName").value.trim()||"Player";save();ui();if(socket&&socket.readyState===1){socket.close();}else if(started){connectOnline();}toast("Name gespeichert!");openSettings()}
+function changeName(){state.name=$("newName").value.trim()||"Player";save();ui();toast("Name gespeichert!");openSettings()}
 function toggleShadows(){state.settings.shadows=!state.settings.shadows;renderer.shadowMap.enabled=state.settings.shadows;save();openSettings()}
 function resetSave(){if(confirm("Wirklich den lokalen Fortschritt löschen?")){localStorage.removeItem(SAVE);location.reload()}}
 function openHelp(){openModal(`<button class="close" onclick="closeModal()">✕</button><h2>❓ So spielst du</h2><div class="card"><p><b>WASD</b> bewegen · <b>Maus</b> Kamera · <b>Shift</b> Sprinten · <b>E</b> nächstes Egg</p><p>Öffne Eggs, sammle Brainrots, entdecke Mutationen und schalte neue Zonen über dein Level frei.</p><p>Brainrots produzieren automatisch Coins. Im Shop kannst du deine Geschwindigkeit verbessern.</p><p><b>Wichtig:</b> Es gibt kein Stehlen und kein Bauen. Andere Spieler können deinen Fortschritt nicht verändern.</p></div>`)}
@@ -401,8 +397,8 @@ function openAdmin(){
  '<div class="card"><h3>💰 Coins</h3><button onclick="adminCoins(100000)">+100.000</button><button onclick="adminCoins(1000000)">+1.000.000</button></div>'+
  '<div class="card"><h3>✨ XP</h3><button onclick="addXP(5000,true);save();ui();openAdmin();toast(\'+5.000 XP\')">+5.000 XP</button><button onclick="addXP(50000,true);save();ui();openAdmin();toast(\'+50.000 XP\')">+50.000 XP</button></div>'+
  '<div class="card"><h3>📈 Fortschritt</h3><button onclick="state.level+=10;unlockZones();save();ui();openAdmin();toast(\'+10 Level\')">+10 Level</button><button onclick="adminUnlockAll()">Alle Zonen freischalten</button></div>'+
- '<div class="card"><h3>🔐 Online-Admin</h3><input id="adminServerSecret" type="password" placeholder="Server-Schlüssel" style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-bottom:8px"><button onclick="adminAuth()">🔑 Admin authentifizieren</button><p class="muted">Der Schlüssel wird nur an deinen Online-Server gesendet.</p></div><div class="card"><h3>📢 Announcement</h3><input id="announcementText" maxlength="180" placeholder="Nachricht an alle..." style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-bottom:8px"><button onclick="adminAnnouncement()">📢 Senden</button><p class="muted">Sendet die Nachricht über den Multiplayer-Server an alle aktuell verbundenen Spieler.</p></div>'+
- '<div class="card"><h3>🧠 Brainrot spawnen</h3><select id="spawnBrainrot" style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-bottom:8px">'+brainrotOptions()+'</select><select id="spawnMutation" style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-bottom:8px">'+mutationOptions("Normal")+'</select><button onclick="adminSpawnSelected()">🧠 Spawnen</button><p class="muted">'+all.length+' Brainrots verfügbar · Mutation frei wählbar.</p></div>'+
+ '<div class="card"><h3>📢 Announcement</h3><input id="announcementText" maxlength="180" placeholder="Nachricht an alle..." style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-bottom:8px"><button onclick="adminAnnouncement()">📢 Senden</button><p class="muted">Zeigt die Nachricht in dieser Version direkt im Spiel an.</p></div>'+
+ '<div class="card"><h3>🧠 Brainrot spawnen</h3><select id="spawnBrainrot" style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-bottom:8px">'+brainrotOptions()+'</select><select id="spawnMutation" style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-bottom:8px>'+mutationOptions("Normal")+'</select><button onclick="adminSpawnSelected()">🧠 Spawnen</button><p class="muted">'+all.length+' Brainrots verfügbar · Mutation frei wählbar.</p></div>'+
  '<div class="card"><h3>🎁 Brainrot schenken</h3><input id="giftPlayer" placeholder="Spielername" value="'+state.name+'" style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-bottom:8px"><select id="giftPet" style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white">'+all.map((p,i)=>'<option value="'+i+'">'+p.name+' · '+p.rarity+'</option>').join("")+'</select><select id="giftMutation" style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-top:8px;margin-bottom:8px>'+mutationOptions("Normal")+'</select><button onclick="adminGiftSelected()">🎁 Verschenken</button></div>'+
  '<div class="card"><h3>🌙 Zeit</h3><button onclick="toggleDay()">Tag/Nacht wechseln</button></div>'+
  '</div><p class="muted">Admin-Brainrots sind exklusiv. Normale Brainrots können mit jeder gewünschten Mutation gespawnt oder verschenkt werden. Kein Stehlen.</p>');
@@ -432,19 +428,13 @@ function adminGiftSelected(){
   toast("🎁 Geschenk für "+recipient+" vorgemerkt.");
  }
 }
-function adminAuth(){
- const secret=( $("adminServerSecret")?.value||"" ).trim();
- if(!secret)return toast("🔐 Server-Schlüssel eingeben.");
- sendNet({type:"admin_auth",secret});
-}
 function adminAnnouncement(){
  const msg=( $("announcementText").value||"" ).trim();
  if(!msg)return toast("📢 Bitte eine Nachricht eingeben.");
- if(!socket||socket.readyState!==1)return toast("🌐 Nicht mit dem Online-Server verbunden.");
  state.announcements=state.announcements||[];
  state.announcements.push({text:msg,by:state.name,time:Date.now()});
  if(state.announcements.length>20)state.announcements.shift();
- save();sendNet({type:"admin_announcement",text:msg,by:state.name});showAnnouncement(msg);openAdmin();toast("📢 Globales Announcement gesendet!");
+ save();showAnnouncement(msg);openAdmin();toast("📢 Announcement gesendet!");
 }
 function showAnnouncement(msg){
  const el=$("announcement"); if(!el)return;
@@ -504,6 +494,7 @@ setInterval(()=>{if(started){const inc=Math.max(1,income());state.coins+=inc;sta
 
 boot();
 applyInputMode();
+connectPresence();
 </script>
 </body>
 </html>

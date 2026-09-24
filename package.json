@@ -1,8 +1,7 @@
 {
-  "name": "egg-raiders-online",
-  "version": "1.0.0",
-  "private": true,
-  "type": "commonjs",
-  "scripts": {"start": "node server.js"},
-  "dependencies": {"ws": "^8.18.0"}
+  "name":"egg-raiders-online",
+  "version":"1.0.0",
+  "private":true,
+  "scripts":{"start":"node server.js"},
+  "dependencies":{"ws":"^8.18.0"}
 }
