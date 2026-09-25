@@ -382,30 +382,7 @@ function openSettings(){openModal(`<button class="close" onclick="closeModal()">
 <div class="card"><h3>Speicher</h3><button style="background:#a52d49" onclick="resetSave()">Fortschritt löschen</button></div>`)}
 function changeName(){state.name=$("newName").value.trim()||"Player";save();ui();toast("Name gespeichert!");openSettings()}
 function toggleShadows(){state.settings.shadows=!state.settings.shadows;renderer.shadowMap.enabled=state.settings.shadows;save();openSettings()}
-function resetSave(){
- if(!confirm("⚠️ Wirklich ALLES löschen?
-
-Dein kompletter Spielstand wird zurückgesetzt:
-• Coins
-• XP & Level
-• alle Brainrots
-• Mutationen
-• freigeschaltete Zonen
-• Speed-Upgrades
-• Quests & Achievements
-• Daily-Fortschritt
-• Einstellungen
-
-Dieser Vorgang kann nicht rückgängig gemacht werden.")) return;
- localStorage.removeItem(SAVE);
- state=JSON.parse(JSON.stringify(defaultState));
- rebuildPets?.();
- ui?.();
- save();
- closeModal?.();
- toast("🗑️ Kompletter Spielstand gelöscht!");
- setTimeout(()=>location.reload(),700);
-}
+function resetSave(){if(confirm("Wirklich den lokalen Fortschritt löschen?")){localStorage.removeItem(SAVE);location.reload()}}
 function openHelp(){openModal(`<button class="close" onclick="closeModal()">✕</button><h2>❓ So spielst du</h2><div class="card"><p><b>WASD</b> bewegen · <b>Maus</b> Kamera · <b>Shift</b> Sprinten · <b>E</b> nächstes Egg</p><p>Öffne Eggs, sammle Brainrots, entdecke Mutationen und schalte neue Zonen über dein Level frei.</p><p>Brainrots produzieren automatisch Coins. Im Shop kannst du deine Geschwindigkeit verbessern.</p><p><b>Wichtig:</b> Es gibt kein Stehlen und kein Bauen. Andere Spieler können deinen Fortschritt nicht verändern.</p></div>`)}
 function getAllBrainrots(){
  const out=[];
