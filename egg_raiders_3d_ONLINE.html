@@ -62,7 +62,7 @@ canvas{display:block}button,input{font:inherit}button{border:0;color:#fff;cursor
   <button class="hbtn" onclick="openSettings()">⚙️</button>
   <button class="hbtn admin" id="adminBtn" onclick="openAdmin()" style="display:none">👑 Admin</button>
  </div>
- <div id="bottom"><div class="pill">WASD · Maus · Shift</div><div class="pill">E = nächstes Egg</div></div>
+ <div id="bottom"><div class="pill">WASD · Maus · Shift</div><div class="pill">E = nächstes Egg</div><div class="pill" id="serverStatus">🔴 Server: nicht verbunden</div></div>
 </div>
 
 <div id="mobile"><div class="stick" id="stick"><div class="knob" id="knob"></div></div><div class="touches"><button class="touch" id="interact">E</button><button class="touch" id="run">⚡</button></div></div>
@@ -160,18 +160,21 @@ let onlineSocket=null;
 let onlinePlayers=[];
 let playerServerReady=false;
 let serverPlayerId=null;
+let adminServerAuthenticated=false;
 function wsUrl(){const proto=location.protocol==="https:"?"wss:":"ws:";return proto+"//"+location.host;}
 function connectPresence(){
   if(!location.host || location.protocol==="file:") return;
   try{
     onlineSocket=new WebSocket(wsUrl());
-    onlineSocket.onopen=()=>{playerServerReady=true;onlineSocket.send(JSON.stringify({type:"join",name:state.name}));renderPlayerList();};
-    onlineSocket.onmessage=e=>{try{const msg=JSON.parse(e.data);if(msg.type==="presence"){onlinePlayers=msg.players||[];serverPlayerId=msg.id||serverPlayerId;renderPlayerList();}if(msg.type==="announcement"&&msg.text)showAnnouncement(msg.text);}catch(err){}};
-    onlineSocket.onclose=()=>{playerServerReady=false;renderPlayerList();setTimeout(connectPresence,4000);};
+    onlineSocket.onopen=()=>{playerServerReady=true;setServerStatus();onlineSocket.send(JSON.stringify({type:"join",name:state.name}));renderPlayerList();};
+    onlineSocket.onmessage=e=>{try{const msg=JSON.parse(e.data);if(msg.type==="presence"){onlinePlayers=msg.players||[];serverPlayerId=msg.id||serverPlayerId;renderPlayerList();}if(msg.type==="announcement"&&msg.text)showAnnouncement(msg.text);if(msg.type==="adminAuth"){adminServerAuthenticated=!!msg.ok;setServerStatus();if(msg.ok)toast("🔐 Admin-Server-Schlüssel akzeptiert!");else toast("❌ Falscher Admin-Server-Schlüssel.");}}catch(err){}};
+    onlineSocket.onclose=()=>{playerServerReady=false;adminServerAuthenticated=false;setServerStatus();renderPlayerList();setTimeout(connectPresence,4000);};
     onlineSocket.onerror=()=>{};
   }catch(err){}
 }
 function sendPresence(){if(onlineSocket?.readyState===1)onlineSocket.send(JSON.stringify({type:"update",name:state.name}));}
+function setServerStatus(){const el=$("serverStatus");if(!el)return;if(playerServerReady){el.textContent=adminServerAuthenticated?"🟢 Server: verbunden · 👑 Admin authentifiziert":"🟢 Server: verbunden";el.style.borderColor=adminServerAuthenticated?"#7c5cff":"#1d6b43";}else{el.textContent=location.protocol==="file:"?"🟡 Server: HTML lokal geöffnet":"🔴 Server: nicht verbunden";el.style.borderColor="#63353b";}}
+function authenticateAdmin(){const secret=(($("adminServerSecret")||{}).value||"").trim();if(!secret)return toast("🔐 Bitte den Admin-Server-Schlüssel eingeben.");if(onlineSocket?.readyState!==1)return toast("🔴 Keine Serververbindung.");onlineSocket.send(JSON.stringify({type:"adminAuth",secret}));}
 function renderPlayerList(){const online=(onlinePlayers||[]).filter(p=>p.online);$("onlineCount").textContent=online.length||1;}
 function openPlayerList(){
   const rows=(onlinePlayers||[]).slice().sort((a,b)=>{if(a.online!==b.online)return a.online?-1:1;if(a.name===state.name)return -1;if(b.name===state.name)return 1;return String(a.name).localeCompare(String(b.name));});
@@ -397,7 +400,7 @@ function openAdmin(){
  '<div class="card"><h3>💰 Coins</h3><button onclick="adminCoins(100000)">+100.000</button><button onclick="adminCoins(1000000)">+1.000.000</button></div>'+
  '<div class="card"><h3>✨ XP</h3><button onclick="addXP(5000,true);save();ui();openAdmin();toast(\'+5.000 XP\')">+5.000 XP</button><button onclick="addXP(50000,true);save();ui();openAdmin();toast(\'+50.000 XP\')">+50.000 XP</button></div>'+
  '<div class="card"><h3>📈 Fortschritt</h3><button onclick="state.level+=10;unlockZones();save();ui();openAdmin();toast(\'+10 Level\')">+10 Level</button><button onclick="adminUnlockAll()">Alle Zonen freischalten</button></div>'+
- '<div class="card"><h3>📢 Announcement</h3><input id="announcementText" maxlength="180" placeholder="Nachricht an alle..." style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-bottom:8px"><button onclick="adminAnnouncement()">📢 Senden</button><p class="muted">Zeigt die Nachricht in dieser Version direkt im Spiel an.</p></div>'+
+ '<div class="card"><h3>🔐 Admin-Server</h3><p class="muted">Gib hier den <b>ADMIN_SECRET</b> ein, den du in Render als Environment Variable gespeichert hast.</p><input id="adminServerSecret" type="password" placeholder="Admin-Server-Schlüssel" style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-bottom:8px"><button onclick="authenticateAdmin()">🔑 Schlüssel prüfen</button><p class="muted">Status: <b>${playerServerReady?(adminServerAuthenticated?"🟢 authentifiziert":"🟢 verbunden, nicht authentifiziert"):"🔴 nicht verbunden"}</b></p></div><div class="card"><h3>📢 Announcement</h3><input id="announcementText" maxlength="180" placeholder="Nachricht an alle..." style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-bottom:8px"><button onclick="adminAnnouncement()">📢 Senden</button><p class="muted">Zeigt die Nachricht in dieser Version direkt im Spiel an.</p></div>'+
  '<div class="card"><h3>🧠 Brainrot spawnen</h3><select id="spawnBrainrot" style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-bottom:8px">'+brainrotOptions()+'</select><select id="spawnMutation" style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-bottom:8px>'+mutationOptions("Normal")+'</select><button onclick="adminSpawnSelected()">🧠 Spawnen</button><p class="muted">'+all.length+' Brainrots verfügbar · Mutation frei wählbar.</p></div>'+
  '<div class="card"><h3>🎁 Brainrot schenken</h3><input id="giftPlayer" placeholder="Spielername" value="'+state.name+'" style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-bottom:8px"><select id="giftPet" style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white">'+all.map((p,i)=>'<option value="'+i+'">'+p.name+' · '+p.rarity+'</option>').join("")+'</select><select id="giftMutation" style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-top:8px;margin-bottom:8px>'+mutationOptions("Normal")+'</select><button onclick="adminGiftSelected()">🎁 Verschenken</button></div>'+
  '<div class="card"><h3>🌙 Zeit</h3><button onclick="toggleDay()">Tag/Nacht wechseln</button></div>'+
