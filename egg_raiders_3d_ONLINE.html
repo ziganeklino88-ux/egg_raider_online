@@ -383,20 +383,7 @@ function openSettings(){openModal(`<button class="close" onclick="closeModal()">
 function changeName(){state.name=$("newName").value.trim()||"Player";save();ui();toast("Name gespeichert!");openSettings()}
 function toggleShadows(){state.settings.shadows=!state.settings.shadows;renderer.shadowMap.enabled=state.settings.shadows;save();openSettings()}
 function resetSave(){
- if(!confirm("⚠️ Wirklich ALLES löschen?
-
-Dein kompletter Spielstand wird zurückgesetzt:
-• Coins
-• XP & Level
-• alle Brainrots
-• Mutationen
-• freigeschaltete Zonen
-• Speed-Upgrades
-• Quests & Achievements
-• Daily-Fortschritt
-• Einstellungen
-
-Dieser Vorgang kann nicht rückgängig gemacht werden.")) return;
+ if(!confirm("⚠️ Wirklich ALLES löschen?\n\nDein kompletter Spielstand wird zurückgesetzt:\n• Coins\n• XP & Level\n• alle Brainrots\n• Mutationen\n• freigeschaltete Zonen\n• Speed-Upgrades\n• Quests & Achievements\n• Daily-Fortschritt\n• Einstellungen\n\nDieser Vorgang kann nicht rückgängig gemacht werden.")) return;
  localStorage.removeItem(SAVE);
  state=JSON.parse(JSON.stringify(defaultState));
  rebuildPets?.();
