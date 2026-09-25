@@ -383,7 +383,20 @@ function openSettings(){openModal(`<button class="close" onclick="closeModal()">
 function changeName(){state.name=$("newName").value.trim()||"Player";save();ui();toast("Name gespeichert!");openSettings()}
 function toggleShadows(){state.settings.shadows=!state.settings.shadows;renderer.shadowMap.enabled=state.settings.shadows;save();openSettings()}
 function resetSave(){
- if(!confirm("⚠️ Wirklich ALLES löschen?\n\nDein kompletter Spielstand wird zurückgesetzt:\n• Coins\n• XP & Level\n• alle Brainrots\n• Mutationen\n• freigeschaltete Zonen\n• Speed-Upgrades\n• Quests & Achievements\n• Daily-Fortschritt\n• Einstellungen\n\nDieser Vorgang kann nicht rückgängig gemacht werden.")) return;
+ if(!confirm("⚠️ Wirklich ALLES löschen?
+
+Dein kompletter Spielstand wird zurückgesetzt:
+• Coins
+• XP & Level
+• alle Brainrots
+• Mutationen
+• freigeschaltete Zonen
+• Speed-Upgrades
+• Quests & Achievements
+• Daily-Fortschritt
+• Einstellungen
+
+Dieser Vorgang kann nicht rückgängig gemacht werden.")) return;
  localStorage.removeItem(SAVE);
  state=JSON.parse(JSON.stringify(defaultState));
  rebuildPets?.();
@@ -422,25 +435,30 @@ function openAdmin(){
  '<div class="card"><h3>💰 Coins</h3><button onclick="adminCoins(100000)">+100.000</button><button onclick="adminCoins(1000000)">+1.000.000</button></div>'+
  '<div class="card"><h3>✨ XP</h3><button onclick="addXP(5000,true);save();ui();openAdmin();toast(\'+5.000 XP\')">+5.000 XP</button><button onclick="addXP(50000,true);save();ui();openAdmin();toast(\'+50.000 XP\')">+50.000 XP</button></div>'+
  '<div class="card"><h3>📈 Fortschritt</h3><button onclick="state.level+=10;unlockZones();save();ui();openAdmin();toast(\'+10 Level\')">+10 Level</button><button onclick="adminUnlockAll()">Alle Zonen freischalten</button></div>'+
- '<div class="card"><h3>🔐 Admin-Server</h3><p class="muted">Gib hier den <b>ADMIN_SECRET</b> ein, den du in Render als Environment Variable gespeichert hast.</p><input id="adminServerSecret" type="password" placeholder="Admin-Server-Schlüssel" style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-bottom:8px"><button onclick="authenticateAdmin()">🔑 Schlüssel prüfen</button><p class="muted">Status: <b>${playerServerReady?(adminServerAuthenticated?"🟢 authentifiziert":"🟢 verbunden, nicht authentifiziert"):"🔴 nicht verbunden"}</b></p></div><div class="card"><h3>📢 Announcement</h3><input id="announcementText" maxlength="180" placeholder="Nachricht an alle..." style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-bottom:8px"><button onclick="adminAnnouncement()">📢 Senden</button><p class="muted">Zeigt die Nachricht in dieser Version direkt im Spiel an.</p></div>'+
+ '<div class="card"><h3>🔐 Admin-Server</h3><p class="muted">Gib hier den <b>ADMIN_SECRET</b> ein, den du in Render als Environment Variable gespeichert hast.</p><input id="adminServerSecret" type="password" placeholder="Admin-Server-Schlüssel" style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-bottom:8px"><button onclick="authenticateAdmin()">🔑 Schlüssel prüfen</button><p class="muted">Status: <b>${playerServerReady?(adminServerAuthenticated?"🟢 authentifiziert":"🟡 verbunden, bitte ADMIN_SECRET prüfen") :"🔴 nicht verbunden"}</b><p class="muted">⚠️ Der Admin-Bereich wird bei <b>LinoA</b> angezeigt, aber Admin-Aktionen funktionieren erst nach erfolgreicher Server-Authentifizierung.</p></div><div class="card"><h3>📢 Announcement</h3><input id="announcementText" maxlength="180" placeholder="Nachricht an alle..." style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-bottom:8px"><button onclick="adminAnnouncement()">📢 Senden</button><p class="muted">Zeigt die Nachricht in dieser Version direkt im Spiel an.</p></div>'+
  '<div class="card"><h3>🧠 Brainrot spawnen</h3><select id="spawnBrainrot" style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-bottom:8px">'+brainrotOptions()+'</select><select id="spawnMutation" style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-bottom:8px>'+mutationOptions("Normal")+'</select><button onclick="adminSpawnSelected()">🧠 Spawnen</button><p class="muted">'+all.length+' Brainrots verfügbar · Mutation frei wählbar.</p></div>'+
  '<div class="card"><h3>🎁 Brainrot schenken</h3><input id="giftPlayer" placeholder="Spielername" value="'+state.name+'" style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-bottom:8px"><select id="giftPet" style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white">'+all.map((p,i)=>'<option value="'+i+'">'+p.name+' · '+p.rarity+'</option>').join("")+'</select><select id="giftMutation" style="width:100%;padding:10px;background:#081222;border:1px solid #31445f;border-radius:10px;color:white;margin-top:8px;margin-bottom:8px>'+mutationOptions("Normal")+'</select><button onclick="adminGiftSelected()">🎁 Verschenken</button></div>'+
  '<div class="card"><h3>🌙 Zeit</h3><button onclick="toggleDay()">Tag/Nacht wechseln</button></div>'+
  '</div><p class="muted">Admin-Brainrots sind exklusiv. Normale Brainrots können mit jeder gewünschten Mutation gespawnt oder verschenkt werden. Kein Stehlen.</p>');
 }
-function adminCoins(n){state.coins+=n;state.totalCoins+=n;save();ui();openAdmin();toast("💰 +"+fmt(n)+" Coins")}
-function adminUnlockAll(){state.level=Math.max(state.level,150);unlockZones();save();ui();openAdmin();toast("🗺️ Alle Zonen freigeschaltet")}
+function requireAdminServer(){
+ if(state.name!=="LinoA"){toast("⛔ Kein Admin-Zugriff.");return false;}
+ if(!adminServerAuthenticated){toast("🔐 Bitte zuerst den ADMIN_SECRET eingeben und prüfen.");return false;}
+ return true;
+}
+function adminCoins(n){if(!requireAdminServer())return;state.coins+=n;state.totalCoins+=n;save();ui();openAdmin();toast("💰 +"+fmt(n)+" Coins")}
+function adminUnlockAll(){if(!requireAdminServer())return;state.level=Math.max(state.level,150);unlockZones();save();ui();openAdmin();toast("🗺️ Alle Zonen freigeschaltet")}
 function makeAdminPet(br,mutationName){
  const mut=mutations.find(m=>m.name===mutationName)||mutations[0];
  return {id:Date.now()+Math.random(),name:br.name,rarity:br.rarity,base:br.base,mutation:mut.name,value:Math.floor(br.base*mut.mult),giftedBy:"LinoA"};
 }
-function adminSpawnSelected(){
+function adminSpawnSelected(){if(!requireAdminServer())return;
  const all=getAllBrainrots(), br=all[Number($("spawnBrainrot").value)||0];
  const p=makeAdminPet(br,$("spawnMutation").value);
  state.collection.push(p);state.mutations.push(p.mutation);spawnPetVisual(p);save();ui();openAdmin();
  toast("🧠 "+p.name+" · "+p.mutation+" gespawnt!");
 }
-function adminGiftSelected(){
+function adminGiftSelected(){if(!requireAdminServer())return;
  const all=getAllBrainrots(), br=all[Number($("giftPet").value)||0];
  const recipient=( $("giftPlayer").value||"" ).trim()||state.name;
  const gift=makeAdminPet(br,$("giftMutation").value);
@@ -454,12 +472,13 @@ function adminGiftSelected(){
  }
 }
 function adminAnnouncement(){
- const msg=( $("announcementText").value||"" ).trim();
+ if(!requireAdminServer())return;
+ const msg=($("announcementText").value||"").trim();
  if(!msg)return toast("📢 Bitte eine Nachricht eingeben.");
- state.announcements=state.announcements||[];
- state.announcements.push({text:msg,by:state.name,time:Date.now()});
- if(state.announcements.length>20)state.announcements.shift();
- save();showAnnouncement(msg);openAdmin();toast("📢 Announcement gesendet!");
+ if(onlineSocket?.readyState!==1)return toast("🔴 Keine Serververbindung.");
+ onlineSocket.send(JSON.stringify({type:"announcement",text:msg}));
+ toast("📢 Globales Announcement gesendet!");
+ openAdmin();
 }
 function showAnnouncement(msg){
  const el=$("announcement"); if(!el)return;
@@ -467,7 +486,7 @@ function showAnnouncement(msg){
  el.classList.remove("show");void el.offsetWidth;el.classList.add("show");
  clearTimeout(showAnnouncement.timer);showAnnouncement.timer=setTimeout(()=>el.classList.remove("show"),7000);
 }
-function adminSpawn(){
+function adminSpawn(){if(!requireAdminServer())return;
  const all=getAllBrainrots().filter(p=>p.source==="ADMIN");
  const p=makeAdminPet(all[Math.floor(Math.random()*all.length)],"Cosmic");
  state.collection.push(p);state.mutations.push(p.mutation);spawnPetVisual(p);save();toast("👑 Exklusiver Brainrot gespawnt!");openAdmin()
